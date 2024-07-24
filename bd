@@ -1,0 +1,6 @@
+-- Определение типов ENUM
+CREATE TYPE gender_type AS ENUM ('Male', 'Female');
+CREATE TYPE role_type AS ENUM ('Officer', 'Admin');
+CREATE TYPE document_type AS ENUM ('Identity', 'Certificate', 'Diploma');
+CREATE TYPE condition_type AS ENUM ('Medical', 'Academic', 'Financial', 'Other');
+CREATE TYPE event_type AS ENUM ('Conference', 'Workshop', 'Seminar', 'Webinar');
