@@ -1,0 +1,29 @@
+-- Таблица ContactInfo
+CREATE TABLE "ContactInfo" (
+    "contact_id" SERIAL PRIMARY KEY,
+    "applicant_id" INTEGER, -- используем INTEGER для внешнего ключа
+    "phone_number" VARCHAR(20), -- используйте VARCHAR для номеров телефонов
+    "email" VARCHAR(50),
+    "address" VARCHAR(255),
+    CONSTRAINT "FK_ContactInfo_Applicant"
+        FOREIGN KEY ("applicant_id")
+        REFERENCES "Applicants"("applicant_id")
+);
+
+
+-- Вставка записи
+INSERT INTO "ContactInfo" ("applicant_id", "phone_number", "email", "address")
+VALUES (1, '1234567890', 'applicant@example.com', '123 Main St');
+
+-- Обновление записи:
+UPDATE "ContactInfo"
+SET "email" = 'new_email@example.com'
+WHERE "contact_id" = 1;
+
+-- Удаление записи:
+DELETE FROM "ContactInfo"
+WHERE "contact_id" = 1;
+
+-- Выбор данных:
+SELECT * FROM "ContactInfo"
+WHERE "applicant_id" = 1;
