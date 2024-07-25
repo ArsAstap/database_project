@@ -4,3 +4,156 @@ CREATE TYPE role_type AS ENUM ('Officer', 'Admin');
 CREATE TYPE document_type AS ENUM ('Identity', 'Certificate', 'Diploma');
 CREATE TYPE condition_type AS ENUM ('Medical', 'Academic', 'Financial', 'Other');
 CREATE TYPE event_type AS ENUM ('Conference', 'Workshop', 'Seminar', 'Webinar');
+
+-- Таблица Applicants
+CREATE TABLE "Applicants" (
+    "applicant_id" SERIAL PRIMARY KEY,
+    "first_name" VARCHAR(50),
+    "last_name" VARCHAR(50),
+    "middle_name" VARCHAR(50),
+    "birth_date" DATE,
+    "gender" gender_type, -- используйте ENUM тип
+    "passport_number" VARCHAR(20) -- используйте VARCHAR для номеров паспортов
+);
+
+-- Таблица Faculties
+CREATE TABLE "Faculties" (
+  "faculty_id" SERIAL PRIMARY KEY,
+  "faculty_name" VARCHAR (50)
+);
+
+-- Таблица EducationalProgram
+CREATE TABLE "EducationalProgram" (
+  "programm_id" SERIAL PRIMARY KEY,
+  "faculty_id" INTEGER, -- добавлен столбец для внешнего ключа
+  CONSTRAINT "FK_EducationalProgram_Faculty"
+    FOREIGN KEY ("faculty_id")
+      REFERENCES "Faculties"("faculty_id")
+);
+
+-- Таблица Admins
+CREATE TABLE "Admins" (
+    "admin_id" SERIAL PRIMARY KEY,
+    "admin_name" VARCHAR(20),
+    "admin_login" VARCHAR(20),
+    "admin_role" role_type -- используйте ENUM тип
+);
+
+-- Таблица AdmissionsOfficers
+CREATE TABLE "AdmissionsOfficers" (
+    "employer_id" SERIAL PRIMARY KEY,
+    "employer_login" VARCHAR(20),
+    "employer_name" VARCHAR(20),
+    "employer_role" role_type -- используйте ENUM тип
+);
+
+-- Таблица Documents
+CREATE TABLE "Documents" (
+    "document_id" SERIAL PRIMARY KEY,
+    "document_name" document_type -- используйте ENUM тип
+);
+
+-- Таблица SpecialConditions
+CREATE TABLE "SpecialConditions" (
+    "condition_id" SERIAL PRIMARY KEY,
+    "enrollee_id" INTEGER, -- используйте INTEGER для внешнего ключа
+    "condition_type" condition_type, -- используйте определенный ENUM тип
+    "condition_descrip" VARCHAR(100),
+    CONSTRAINT "FK_SpecialConditions_Enrollee"
+        FOREIGN KEY ("enrollee_id")
+        REFERENCES "Applicants"("applicant_id") -- предполагаем, что это столбец "applicant_id" в таблице "Applicants"
+);
+
+-- Таблица ExamResults
+CREATE TABLE "ExamResults" (
+    "exam_id" SERIAL PRIMARY KEY,
+    "exam_name" VARCHAR(20),
+    "enrollee_id" INTEGER, -- используем INTEGER для внешнего ключа
+    "score" INT,
+    CONSTRAINT "FK_ExamResults_Enrollee"
+        FOREIGN KEY ("enrollee_id")
+        REFERENCES "Applicants"("applicant_id")
+);
+
+-- Таблица ContactInfo
+CREATE TABLE "ContactInfo" (
+    "contact_id" SERIAL PRIMARY KEY,
+    "applicant_id" INTEGER, -- используем INTEGER для внешнего ключа
+    "phone_number" VARCHAR(20), -- используйте VARCHAR для номеров телефонов
+    "email" VARCHAR(50),
+    "address" VARCHAR(255),
+    CONSTRAINT "FK_ContactInfo_Applicant"
+        FOREIGN KEY ("applicant_id")
+        REFERENCES "Applicants"("applicant_id")
+);
+
+-- Таблица Consultation
+CREATE TABLE "Consultation" (
+    "consultation_id" SERIAL PRIMARY KEY,
+    "enrollee_id" INTEGER, -- используем INTEGER для внешнего ключа
+    "admin_id" INTEGER, -- используем INTEGER для внешнего ключа
+    "consultation_name" VARCHAR(20),
+    "consultation_descrip" VARCHAR(100),
+    CONSTRAINT "FK_Consultation_Enrollee"
+        FOREIGN KEY ("enrollee_id")
+        REFERENCES "Applicants"("applicant_id"),
+    CONSTRAINT "FK_Consultation_Admin"
+        FOREIGN KEY ("admin_id")
+        REFERENCES "Admins"("admin_id")
+);
+
+-- Таблица Application
+CREATE TABLE "Application" (
+    "application_id" SERIAL PRIMARY KEY,
+    "enrollee_id" INTEGER, -- используем INTEGER для внешнего ключа
+    "program_id" INTEGER, -- используем INTEGER для внешнего ключа
+    CONSTRAINT "FK_Application_Enrollee"
+        FOREIGN KEY ("enrollee_id")
+        REFERENCES "Applicants"("applicant_id"),
+    CONSTRAINT "FK_Application_Program"
+        FOREIGN KEY ("program_id")
+        REFERENCES "EducationalProgram"("programm_id")
+);
+
+
+-- Таблица Contest
+CREATE TABLE "Contest" (
+    "contest_id" SERIAL PRIMARY KEY,
+    "contest_name" VARCHAR(100),
+    "program_id" INTEGER, -- используем INTEGER для внешнего ключа
+    "application_id" INTEGER, -- используем INTEGER для внешнего ключа
+    "contest_score" INT,
+    CONSTRAINT "FK_Contest_Program"
+        FOREIGN KEY ("program_id")
+        REFERENCES "EducationalProgram"("programm_id"),
+    CONSTRAINT "FK_Contest_Application"
+        FOREIGN KEY ("application_id")
+        REFERENCES "Application"("application_id")
+);
+
+-- Таблица Questions
+CREATE TABLE "Questions" (
+    "question_id" SERIAL PRIMARY KEY,
+    "question_text" VARCHAR(100),
+    "answer_text" VARCHAR(255),
+    "enrollee_id" INTEGER, -- используем INTEGER для внешнего ключа
+    "employer_id" INTEGER, -- используем INTEGER для внешнего ключа
+    CONSTRAINT "FK_Questions_Enrollee"
+        FOREIGN KEY ("enrollee_id")
+        REFERENCES "Applicants"("applicant_id"),
+    CONSTRAINT "FK_Questions_Employer"
+        FOREIGN KEY ("employer_id")
+        REFERENCES "AdmissionsOfficers"("employer_id")
+);
+
+-- Таблица Events
+CREATE TABLE "Events" (
+    "event_id" SERIAL PRIMARY KEY,
+    "event_name" VARCHAR(20),
+    "event_type" event_type, -- используем ENUM тип
+    "event_descrip" VARCHAR(100),
+    "program_id" INTEGER, -- используем INTEGER для внешнего ключа
+    CONSTRAINT "FK_Events_Program"
+        FOREIGN KEY ("program_id")
+        REFERENCES "EducationalProgram"("programm_id") -- предполагаем, что это столбец "programm_id" в таблице "EducationalProgram"
+);
