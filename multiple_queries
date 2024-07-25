@@ -1,0 +1,85 @@
+-- Запрос для нахождения всех заявителей с их контактной информацией, имеющими особые условия и тип условия.
+SELECT a.first_name, a.last_name, c.phone_number, c.email, sc.condition_type, sc.condition_descrip
+FROM "Applicants" a
+JOIN "ContactInfo" c ON a.applicant_id = c.applicant_id
+JOIN "SpecialConditions" sc ON a.applicant_id = sc.enrollee_id;
+
+-- Запрос для нахождения общего числа заявителей для каждого факультета.
+SELECT f.faculty_name, COUNT(a.applicant_id) AS total_applicants
+FROM "Faculties" f
+JOIN "EducationalProgram" ep ON f.faculty_id = ep.faculty_id
+JOIN "Application" app ON ep.programm_id = app.program_id
+JOIN "Applicants" a ON app.enrollee_id = a.applicant_id
+GROUP BY f.faculty_name;
+
+-- Запрос для получения всех вопросов, заданных заявителями, и соответствующих ответов, предоставленных приемными комиссиями.
+SELECT a.first_name, a.last_name, q.question_text, q.answer_text, o.employer_name
+FROM "Questions" q
+JOIN "Applicants" a ON q.enrollee_id = a.applicant_id
+JOIN "AdmissionsOfficers" o ON q.employer_id = o.employer_id;
+
+-- Запрос для нахождения всех конкурсов, в которых участвовал заявитель, и их оценок, фильтруя по конкретному заявителю (например, applicant_id = 1).
+SELECT a.first_name, a.last_name, c.contest_name, c.contest_score
+FROM "Contest" c
+JOIN "Application" app ON c.application_id = app.application_id
+JOIN "Applicants" a ON app.enrollee_id = a.applicant_id
+WHERE a.applicant_id = 1;
+
+-- Запрос для нахождения всех заявителей, которые присутствовали на конкретном типе события и их контактной информации.
+SELECT a.first_name, a.last_name, ci.phone_number, ci.email, e.event_name
+FROM "Applicants" a
+JOIN "Application" app ON a.applicant_id = app.enrollee_id
+JOIN "EducationalProgram" ep ON app.program_id = ep.programm_id
+JOIN "Events" e ON ep.programm_id = e.program_id
+JOIN "ContactInfo" ci ON a.applicant_id = ci.applicant_id
+WHERE e.event_type = 'Workshop';
+
+-- Процедура для добавления нового заявителя. Данная процедура помогает централизовать и инкапсулировать бизнес-логику, связанную с добавлением заявителя, что упрощает обслуживание системы и повышает её надежность. 
+CREATE OR REPLACE PROCEDURE add_applicant(
+    first_name VARCHAR,
+    last_name VARCHAR,
+    middle_name VARCHAR,
+    birth_date DATE,
+    gender gender_type,
+    passport_number VARCHAR
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO "Applicants" (first_name, last_name, middle_name, birth_date, gender, passport_number)
+    VALUES (first_name, last_name, middle_name, birth_date, gender, passport_number);
+END;
+$$;
+
+-- Процедура для добавления нового результата экзамена. Данная процедура сосредотачивает логику добавления результатов экзаменов в одном месте для упрощенного управления.
+CREATE OR REPLACE PROCEDURE add_exam_result(
+    exam_name VARCHAR,
+    enrollee_id INTEGER,
+    score INT
+)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    INSERT INTO "ExamResults" (exam_name, enrollee_id, score)
+    VALUES (exam_name, enrollee_id, score);
+END;
+$$;
+
+-- Триггер для автоматического обновления даты последнего изменения у заявителя.
+ALTER TABLE "Applicants"
+ADD COLUMN last_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+Затем создадим функцию триггера и сам триггер:
+CREATE OR REPLACE FUNCTION update_last_modified()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.last_modified = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_last_modified_trigger
+BEFORE UPDATE ON "Applicants"
+FOR EACH ROW
+EXECUTE FUNCTION update_last_modified();
+
+
